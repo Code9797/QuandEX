@@ -56,38 +56,28 @@ jobs:
           ):
               dashboard = dashboard.replace(unused_import, "")
 
-          old_brand = """                    Image(
-                        painter = painterResource(R.drawable.quandex_logo),
-                        contentDescription = "Logo QuandEX",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(62.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                    )
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "QUANDEX MOBILE",
-                            color = Gold,
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "${dashboard.symbol}  •  ${dashboard.timeframe}  •  MULTI-TIMEFRAME",
-                            color = Muted,
-                            fontSize = 12.sp
-                        )
-                    }
-"""
-          new_brand = """                    Text(
-                        "${dashboard.symbol}  •  ${dashboard.timeframe}  •  MULTI-TIMEFRAME",
-                        color = Muted,
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-"""
-          if old_brand not in dashboard:
-              raise SystemExit("Bloc d’accueil QuandEX introuvable")
-          dashboard_file.write_text(dashboard.replace(old_brand, new_brand), encoding="utf-8")
+          lines = dashboard.splitlines()
+          start = next(i for i, line in enumerate(lines) if line.strip() == "Image(")
+          column_start = next(i for i in range(start, len(lines)) if "Column(Modifier.weight(1f)) {" in lines[i])
+          depth = 0
+          end = None
+          for i in range(column_start, len(lines)):
+              depth += lines[i].count("{") - lines[i].count("}")
+              if depth == 0:
+                  end = i
+                  break
+          if end is None:
+              raise SystemExit("Fin du bloc d’accueil QuandEX introuvable")
+          replacement = [
+              "                    Text(",
+              '                        "${dashboard.symbol}  •  ${dashboard.timeframe}  •  MULTI-TIMEFRAME",',
+              "                        color = Muted,",
+              "                        fontSize = 13.sp,",
+              "                        modifier = Modifier.weight(1f)",
+              "                    )",
+          ]
+          lines[start:end + 1] = replacement
+          dashboard_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
           build = build_file.read_text(encoding="utf-8")
           build = build.replace("versionCode = 151", "versionCode = 153")
