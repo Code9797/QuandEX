@@ -20,11 +20,14 @@ jobs:
       - name: Récupérer le projet
         uses: actions/checkout@v4
 
-      - name: Extraire les sources QuandEX
+      - name: Extraire et préparer les sources QuandEX
         run: |
           mkdir -p workspace
           unzip -q QuandEX_Android_v1.50_Source.zip -d workspace
           test -f workspace/QuandEX-Android/settings.gradle.kts
+          sed -i '/import androidx.compose.foundation.layout.weight/d' \
+            workspace/QuandEX-Android/app/src/main/java/com/quanda/quandex/ui/QuandExApp.kt \
+            workspace/QuandEX-Android/app/src/main/java/com/quanda/quandex/ui/screens/DashboardScreen.kt
 
       - name: Installer Java 17
         uses: actions/setup-java@v4
