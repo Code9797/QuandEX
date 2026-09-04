@@ -20,14 +20,89 @@ jobs:
       - name: Récupérer le projet
         uses: actions/checkout@v4
 
-      - name: Extraire et préparer les sources QuandEX
+      - name: Extraire et mettre à jour QuandEX 1.50.3
         run: |
           mkdir -p workspace
           unzip -q QuandEX_Android_v1.50_Source.zip -d workspace
           test -f workspace/QuandEX-Android/settings.gradle.kts
-          sed -i '/import androidx.compose.foundation.layout.weight/d' \
-            workspace/QuandEX-Android/app/src/main/java/com/quanda/quandex/ui/QuandExApp.kt \
-            workspace/QuandEX-Android/app/src/main/java/com/quanda/quandex/ui/screens/DashboardScreen.kt
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("workspace/QuandEX-Android")
+          app_file = root / "app/src/main/java/com/quanda/quandex/ui/QuandExApp.kt"
+          dashboard_file = root / "app/src/main/java/com/quanda/quandex/ui/screens/DashboardScreen.kt"
+          build_file = root / "app/build.gradle.kts"
+          strings_file = root / "app/src/main/res/values/strings.xml"
+          settings_file = root / "settings.gradle.kts"
+          repository_file = root / "app/src/main/java/com/quanda/quandex/data/QuandExRepository.kt"
+
+          app = app_file.read_text(encoding="utf-8")
+          app = app.replace("import androidx.compose.foundation.layout.weight\n", "")
+          app = app.replace(".size(42.dp)", ".size(56.dp)")
+          app = app.replace(".clip(RoundedCornerShape(10.dp))", ".clip(RoundedCornerShape(14.dp))")
+          app = app.replace("label = { Text(destination.label) }", "label = null")
+          app_file.write_text(app, encoding="utf-8")
+
+          dashboard = dashboard_file.read_text(encoding="utf-8")
+          for unused_import in (
+              "import androidx.compose.foundation.Image\n",
+              "import androidx.compose.foundation.layout.size\n",
+              "import androidx.compose.foundation.layout.weight\n",
+              "import androidx.compose.foundation.shape.RoundedCornerShape\n",
+              "import androidx.compose.ui.draw.clip\n",
+              "import androidx.compose.ui.layout.ContentScale\n",
+              "import androidx.compose.ui.res.painterResource\n",
+              "import com.quanda.quandex.R\n",
+          ):
+              dashboard = dashboard.replace(unused_import, "")
+
+          old_brand = """                    Image(
+                        painter = painterResource(R.drawable.quandex_logo),
+                        contentDescription = "Logo QuandEX",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(62.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "QUANDEX MOBILE",
+                            color = Gold,
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "${dashboard.symbol}  •  ${dashboard.timeframe}  •  MULTI-TIMEFRAME",
+                            color = Muted,
+                            fontSize = 12.sp
+                        )
+                    }
+"""
+          new_brand = """                    Text(
+                        "${dashboard.symbol}  •  ${dashboard.timeframe}  •  MULTI-TIMEFRAME",
+                        color = Muted,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+"""
+          if old_brand not in dashboard:
+              raise SystemExit("Bloc d’accueil QuandEX introuvable")
+          dashboard_file.write_text(dashboard.replace(old_brand, new_brand), encoding="utf-8")
+
+          build = build_file.read_text(encoding="utf-8")
+          build = build.replace("versionCode = 151", "versionCode = 153")
+          build = build.replace('versionName = "1.50.1"', 'versionName = "1.50.3"')
+          build_file.write_text(build, encoding="utf-8")
+
+          strings = strings_file.read_text(encoding="utf-8")
+          strings_file.write_text(strings.replace("QuandEX Mobile", "QuandEX"), encoding="utf-8")
+
+          settings = settings_file.read_text(encoding="utf-8")
+          settings_file.write_text(settings.replace('rootProject.name = "QuandEXMobile"', 'rootProject.name = "QuandEX"'), encoding="utf-8")
+
+          repository = repository_file.read_text(encoding="utf-8")
+          repository_file.write_text(repository.replace('comment = "QuandEX Mobile"', 'comment = "QuandEX"'), encoding="utf-8")
+          PY
 
       - name: Installer Java 17
         uses: actions/setup-java@v4
@@ -53,12 +128,12 @@ jobs:
       - name: Préparer l’APK QuandEX
         run: |
           mkdir -p dist
-          cp workspace/QuandEX-Android/app/build/outputs/apk/debug/app-debug.apk dist/QuandEX-Mobile-v1.50.1-debug.apk
+          cp workspace/QuandEX-Android/app/build/outputs/apk/debug/app-debug.apk dist/QuandEX-v1.50.3-debug.apk
 
       - name: Publier l’APK
         uses: actions/upload-artifact@v4
         with:
-          name: QuandEX-Mobile-v1.50.1-APK
-          path: dist/QuandEX-Mobile-v1.50.1-debug.apk
+          name: QuandEX-v1.50.3-APK
+          path: dist/QuandEX-v1.50.3-debug.apk
           if-no-files-found: error
           retention-days: 30
