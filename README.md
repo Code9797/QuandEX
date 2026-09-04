@@ -1,12 +1,14 @@
-# QuandEX Mobile
+# QuandEX
 
 Application Android native en Kotlin et Jetpack Compose pour surveiller QuandEX / GOLDEX EA PRO et transmettre des commandes à une passerelle MT5 sécurisée.
 
-Version actuelle : `1.50.1`, avec le logo officiel QuandEX intégré comme icône de l’application et dans le tableau de bord.
+Version actuelle : `1.51.0`, avec un graphique en chandeliers temps réel, le logo officiel QuandEX agrandi et une navigation compacte sans libellés.
 
 ## Fonctions
 
 - Tableau de bord noir et or actualisé automatiquement.
+- Fenêtre de chandeliers OHLC temps réel avec sélection tactile.
+- EMA 20/50, volume, prix courant, Stop Loss, Take Profit, Order Block et FVG superposés.
 - Statut, tendance, signal, spread, balance, equity, profit, win rate, risque et lot.
 - Alignement MN1, D1, H4, H1 et M15.
 - RSI, ADX, ATR, sessions, news, Order Blocks et Imbalances/FVG.
@@ -27,6 +29,10 @@ Version actuelle : `1.50.1`, avec le logo officiel QuandEX intégré comme icôn
 
 APK attendu après compilation : `app/build/outputs/apk/debug/app-debug.apk`.
 
+## Compilation automatique GitHub
+
+Le workflow `.github/workflows/android-build.yml` installe Java 17, Android SDK et Gradle 8.9, exécute les tests puis publie `QuandEX-v1.51.0-debug.apk` comme artefact téléchargeable. Importez le projet dans un dépôt GitHub, ouvrez l’onglet **Actions**, choisissez **Build QuandEX Android APK**, puis **Run workflow**.
+
 ## Tester sans MT5
 
 Le mode démonstration interne ne nécessite aucun serveur. Pour tester le véritable client HTTP :
@@ -41,7 +47,7 @@ Dans une version debug exécutée sur l’émulateur Android, désactivez le mod
 
 Une application Android ne peut pas appeler directement les fonctions de trading MQL5. Elle utilise donc une passerelle :
 
-`QuandEX Mobile → HTTPS → passerelle authentifiée → GOLDEX EA PRO / MT5`
+`QuandEX → HTTPS → passerelle authentifiée → GOLDEX EA PRO / MT5`
 
 Le contrat JSON complet est décrit dans [`docs/API.md`](docs/API.md). La passerelle de production doit confirmer chaque commande et appliquer les protections de risque côté MT5 avant toute exécution.
 
